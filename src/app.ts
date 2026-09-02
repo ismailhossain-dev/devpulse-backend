@@ -1,5 +1,8 @@
 import express, { type Request, type Response } from "express"
 import cookieParser from "cookie-parser"
+import { useRoute } from "./modules/users/users.route";
+import globallErrorHandler from "./middleware/globallErrorHandler";
+import { authRoute } from "./modules/auth/auth.route";
 const app = express()
 app.use(cookieParser())
 app.use(express.json()); 
@@ -13,6 +16,9 @@ app.get('/', (req:Request, res:Response) => {
  })
 })
 
+app.use("/api/auth/signup", useRoute)
+app.use("/api/auth/login", authRoute)
 
+app.use(globallErrorHandler);
 
 export default app; 
