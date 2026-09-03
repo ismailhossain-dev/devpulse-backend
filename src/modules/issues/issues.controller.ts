@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import sendResponse from "../../utility/sendResponse";
 import { issuesService } from "./issues.service";
+import type { IUser } from "./issues.interface";
 
 const createIssues = async (req: Request, res: Response) => {
   try {
@@ -65,7 +66,33 @@ const getSingleIssue = async (req: Request, res: Response) => {
       success: true,
       statusCode: 200,
       message: "Issue retrived successfully",
-      data: result
+      data: result,
+    });
+  } catch (error: any) {
+    sendResponse(res, {
+      success: false,
+      statusCode: 500,
+      message: error.message,
+      error: error,
+    });
+  }
+};
+const deleteSingleIssue = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  if (!id) {
+    sendResponse(res, {
+      statusCode: 400,
+      success: false,
+      message: "Invalid Issue id!!",
+    });
+  }
+  try {
+    const result = await issuesService.deleteSingleIssueFromDB(id as string);
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "Issue deleted successfully",
     });
   } catch (error: any) {
     sendResponse(res, {
@@ -77,8 +104,32 @@ const getSingleIssue = async (req: Request, res: Response) => {
   }
 };
 
+
+const updateIssue = async (req: Request, res: Response) => {
+   try {
+      //req.user come in middleware
+        const result = await issuesService.updateIssueIntoDB(req.params.id as string, req.body, req.user );
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Issue updated successfully",
+            // data: result
+        });
+    } catch (error: any) {
+        sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+};
+
+
 export const issuesController = {
   createIssues,
   getAllIssues,
   getSingleIssue,
+  deleteSingleIssue,
+  updateIssue
 };

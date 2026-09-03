@@ -96,7 +96,7 @@ const getSingleIssueFromDB = async (id: string) => {
       FROM issues
       WHERE id = $1
     `,
-    [id]
+    [id],
   );
 
   if (issueResult.rows.length === 0) {
@@ -111,7 +111,7 @@ const getSingleIssueFromDB = async (id: string) => {
       FROM users
       WHERE id = $1
     `,
-    [issue.reporter_id]
+    [issue.reporter_id],
   );
 
   return {
@@ -127,8 +127,82 @@ const getSingleIssueFromDB = async (id: string) => {
 };
 
 
+const updateIssueIntoDB = async (
+  id: string,
+  payload: {
+    title?: string;
+    description?: string;
+    type?: string;
+  },
+  user: {
+    id: number;
+    role: string;
+  }
+) => {
+
+  const issueResult = await pool.query(
+    `
+      SELECT *
+      FROM issues
+      WHERE id = $1
+    `,
+    [id]
+  );
+
+  if (issueResult.rows.length === 0) {
+    throw new Error("Issue not found");
+  }
+
+  const issue = issueResult.rows[0];
+
+  if (user.role === "maintainer") {
+  } else if (user.role === "contributor") {
+    if (issue.reporter_id !== user.id) {
+      throw new Error("You can only update your own issue");
+    }
+
+    if (issue.status !== "open") {
+      throw new Error("You can only update an open issue");
+    }
+  } else {
+    throw new Error("You are not authorized");
+  }
+
+  const { title, description, type } = payload;
+
+  const result = await pool.query(
+    `
+      UPDATE issues
+      SET
+        title = COALESCE($1, title),
+        description = COALESCE($2, description),
+        type = COALESCE($3, type),
+        updated_at = NOW()
+      WHERE id = $4
+      RETURNING *
+    `,
+    [title, description, type, id]
+  );
+
+  return result.rows[0];
+};
+
+const deleteSingleIssueFromDB = async (id: string) => {
+  const result = await pool.query(
+    `
+      DELETE FROM issues
+      WHERE id = $1
+      RETURNING *
+    `,
+    [id],
+  );
+  return result;
+};
+
 export const issuesService = {
   createIssuesIntoDB,
   getAllIssuesFromDB,
   getSingleIssueFromDB,
+  deleteSingleIssueFromDB,
+  updateIssueIntoDB
 };
