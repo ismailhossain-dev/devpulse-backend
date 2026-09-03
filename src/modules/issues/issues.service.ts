@@ -1,14 +1,16 @@
 import { pool } from "../../db";
-import type { IIssue } from "./issues.interface"
+import type { IIssue } from "./issues.interface";
 
-const createIssuesIntoDB = async(payload: IIssue)=> {
-    const {reporter_id, title, description, type, } = payload;
-    const result = await pool.query(`
-        INSERT INTO issues(reporter_id, title, description, type) VALUES($1, $2, $3, COALESCE($4, 'bug')) RETURNING * `, [reporter_id, title, description,type]
-    );
+const createIssuesIntoDB = async (payload: IIssue) => {
+  const { reporter_id, title, description, type } = payload;
+  const result = await pool.query(
+    `
+        INSERT INTO issues(reporter_id, title, description, type) VALUES($1, $2, $3, COALESCE($4, 'bug')) RETURNING * `,
+    [reporter_id, title, description, type],
+  );
 
-    return result; 
-}
+  return result;
+};
 
 const getAllIssuesFromDB = async (query: {
   sort?: string;
@@ -68,7 +70,7 @@ const getAllIssuesFromDB = async (query: {
         FROM users
         WHERE id = $1
         `,
-        [issue.reporter_id]
+        [issue.reporter_id],
       );
 
       return {
@@ -81,13 +83,52 @@ const getAllIssuesFromDB = async (query: {
         created_at: issue.created_at,
         updated_at: issue.updated_at,
       };
-    })
+    }),
   );
 
   return issues;
 };
 
-export const issuesService ={
-    createIssuesIntoDB,
-   getAllIssuesFromDB
-}
+const getSingleIssueFromDB = async (id: string) => {
+  const issueResult = await pool.query(
+    `
+      SELECT *
+      FROM issues
+      WHERE id = $1
+    `,
+    [id]
+  );
+
+  if (issueResult.rows.length === 0) {
+    throw new Error("Issue not found");
+  }
+
+  const issue = issueResult.rows[0];
+
+  const reporterResult = await pool.query(
+    `
+      SELECT id, name, role
+      FROM users
+      WHERE id = $1
+    `,
+    [issue.reporter_id]
+  );
+
+  return {
+    id: issue.id,
+    title: issue.title,
+    description: issue.description,
+    type: issue.type,
+    status: issue.status,
+    reporter: reporterResult.rows[0],
+    created_at: issue.created_at,
+    updated_at: issue.updated_at,
+  };
+};
+
+
+export const issuesService = {
+  createIssuesIntoDB,
+  getAllIssuesFromDB,
+  getSingleIssueFromDB,
+};
