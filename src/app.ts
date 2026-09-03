@@ -20,6 +20,8 @@ app.get('/', (req:Request, res:Response) => {
 app.use("/api/auth/signup", useRoute)
 app.use("/api/auth/login", authRoute)
 app.use("/api/issues", issuesRoute)
+app.use("/api/issues", issuesRoute)
+
 app.use(globallErrorHandler);
 
 export default app; 
