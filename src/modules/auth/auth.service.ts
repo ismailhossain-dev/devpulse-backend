@@ -39,8 +39,18 @@ const loginUserIntoDB = async (paylad: ILogin) => {
     expiresIn: "1d",
   });
 
-  //console.log(accessToken)
-  return { token };
+  //console.log(token)
+  return {
+  token,
+  user: {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    created_at: user.created_at,
+    updated_at: user.updated_at,
+  }
+}
 };
 
 export const authService = {
