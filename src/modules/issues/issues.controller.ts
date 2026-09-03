@@ -106,24 +106,33 @@ const deleteSingleIssue = async (req: Request, res: Response) => {
 
 
 const updateIssue = async (req: Request, res: Response) => {
-   try {
-      //req.user come in middleware
-        const result = await issuesService.updateIssueIntoDB(req.params.id as string, req.body, req.user );
-        sendResponse(res, {
-            statusCode: 200,
-            success: true,
-            message: "Issue updated successfully",
-            // data: result
-        });
-    } catch (error: any) {
-        sendResponse(res, {
-            statusCode: 500,
-            success: false,
-            message: "Internal server error",
-            error: error.message
-        });
-    }
+  try {
+    const { id } = req.params;
+
+    const result = await issuesService.updateIssueIntoDB(
+      id as string,
+      req.body,
+      req.user
+    );
+
+    console.log("controller.ts:", req.user);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Issue updated successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    sendResponse(res, {
+      statusCode: 500,
+      success: false,
+      message: error.message,
+      error: error.message,
+    });
+  }
 };
+
 
 
 export const issuesController = {

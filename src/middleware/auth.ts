@@ -1,29 +1,59 @@
 import type { Request, Response, NextFunction } from "express";
 import type { ROLES } from "../types";
-import sendResponse from "../utility/sendResponse";
-import jwt from "jsonwebtoken";
+import jwt, { type JwtPayload } from "jsonwebtoken";
 import config from "../config";
-const auth = (...roles: ROLES[]) => {
-  //return use na korle issuse.route.ts err dive
-  return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      console.log(roles)
-      const token = req.headers.authorization;
-      console.log("ei token " , token)
-      if (!token) {
-        return sendResponse(res, {
-          success: false,
-          statusCode: 401,
-          message: "Unautorized access!",
-        });
-      }
+import { pool } from "../db";
 
-      const decoded = jwt.verify(token as string, config.secret as string);
-      console.log("decodeddd", decoded);
-      next();
-    } catch (error) {
-      next(error);
+const auth = (...roles: ROLES[]) => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+   const token = req.headers.authorization?.split(" ")[1];
+
+    //console.log("token:", token);
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized access!!",
+      });
     }
+
+    const decoded = jwt.verify(
+      token,
+      config.jwt_secret as string
+    ) as JwtPayload;
+
+    //console.log("decoded:", decoded);
+
+    const userData = await pool.query(
+      `
+        SELECT * FROM users WHERE email = $1
+      `,
+      [decoded.email]
+    );
+
+    if (userData.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found!",
+      });
+    }
+
+    const user = userData.rows[0];
+
+    if (roles.length && !roles.includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden!",
+      });
+    }
+
+    req.user = decoded;
+
+    next();
   };
 };
 

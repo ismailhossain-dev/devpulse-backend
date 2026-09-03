@@ -1,5 +1,5 @@
 import { pool } from "../../db";
-import type { IIssue } from "./issues.interface";
+import type { IIssue, IUpdateIssue } from "./issues.interface";
 
 const createIssuesIntoDB = async (payload: IIssue) => {
   const { reporter_id, title, description, type } = payload;
@@ -129,17 +129,13 @@ const getSingleIssueFromDB = async (id: string) => {
 
 const updateIssueIntoDB = async (
   id: string,
-  payload: {
-    title?: string;
-    description?: string;
-    type?: string;
-  },
+  payload: IUpdateIssue,
   user: {
     id: number;
     role: string;
   }
 ) => {
-
+  // find issue
   const issueResult = await pool.query(
     `
       SELECT *
@@ -155,8 +151,14 @@ const updateIssueIntoDB = async (
 
   const issue = issueResult.rows[0];
 
+  // maintainer can update any issue
   if (user.role === "maintainer") {
-  } else if (user.role === "contributor") {
+    // allowed
+  }
+
+  // contributor can update only own issue
+  // and only when status is open
+  else if (user.role === "contributor") {
     if (issue.reporter_id !== user.id) {
       throw new Error("You can only update your own issue");
     }
@@ -164,12 +166,16 @@ const updateIssueIntoDB = async (
     if (issue.status !== "open") {
       throw new Error("You can only update an open issue");
     }
-  } else {
+  }
+
+  // other roles are not allowed
+  else {
     throw new Error("You are not authorized");
   }
 
   const { title, description, type } = payload;
 
+  // update issue
   const result = await pool.query(
     `
       UPDATE issues

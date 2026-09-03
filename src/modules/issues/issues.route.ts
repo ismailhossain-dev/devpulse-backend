@@ -10,7 +10,7 @@ router.get("/", issuesController.getAllIssues);
 router.get("/:id", issuesController.getSingleIssue);
 router.patch(
   "/:id",
-  auth(USER_ROLE.contributor, USER_ROLE.maintainer),
+  auth("maintainer"),
   issuesController.updateIssue,
 );
 router.delete("/:id", issuesController.deleteSingleIssue);
