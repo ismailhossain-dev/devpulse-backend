@@ -108,7 +108,7 @@ const deleteSingleIssue = async (req: Request, res: Response) => {
 const updateIssue = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
+    //req.user type err ta chole jabe index.d.ts type set korle
     const result = await issuesService.updateIssueIntoDB(
       id as string,
       req.body,
